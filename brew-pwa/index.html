@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BREW">
+<meta name="theme-color" content="#C8956C">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>BREW — Coffee Recipe Optimizer</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0D0B09;
+  --s1: #161310;
+  --s2: #1E1A16;
+  --s3: #26201A;
+  --b1: #2E2620;
+  --b2: #3A3028;
+  --accent: #C8956C;
+  --accent2: #E8B48A;
+  --t1: #F0E8DC;
+  --t2: #A89880;
+  --t3: #6A5A48;
+  --red: #C86B6B;
+  --red-bg: #1A0808;
+  --red-border: #5A2020;
+  --green: #6B9E6B;
+  --safe: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--t1);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.025; pointer-events: none; z-index: 9999;
+}
+
+/* ─── LAYOUT ─── */
+.app { max-width: 860px; margin: 0 auto; padding: 0 18px calc(40px + var(--safe)); }
+
+/* ─── HEADER ─── */
+.header {
+  display: flex; align-items: center; gap: 14px;
+  padding: 36px 0 22px;
+  border-bottom: 1px solid var(--b1);
+  margin-bottom: 36px;
+  position: sticky; top: 0;
+  background: var(--bg);
+  z-index: 10;
+}
+.logo { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 600; color: var(--accent); letter-spacing: -0.5px; }
+.logo-sub { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--t3); font-family: 'DM Mono', monospace; }
+.vs3-badge {
+  margin-left: auto; font-family: 'DM Mono', monospace; font-size: 10px;
+  color: var(--t3); background: var(--s2); border: 1px solid var(--b1);
+  padding: 5px 11px; border-radius: 2px; letter-spacing: 1px; white-space: nowrap;
+}
+.settings-btn {
+  background: none; border: 1px solid var(--b1); color: var(--t3);
+  width: 32px; height: 32px; border-radius: 2px; cursor: pointer; font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.settings-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ─── SCREENS ─── */
+.screen { animation: fadeUp 0.3s ease; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ─── SETTINGS PANEL ─── */
+.panel-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  z-index: 100; display: flex; align-items: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.panel {
+  background: var(--s1); border-top: 1px solid var(--b2);
+  width: 100%; padding: 28px 24px calc(32px + var(--safe));
+  border-radius: 12px 12px 0 0;
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.panel-title { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--t3); margin-bottom: 20px; }
+.panel-desc { font-size: 12px; color: var(--t3); line-height: 1.7; margin-bottom: 16px; }
+.panel-desc a { color: var(--accent); }
+
+/* ─── FORM ELEMENTS ─── */
+.field { margin-bottom: 16px; }
+label, .lbl {
+  display: block; font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--t3); margin-bottom: 8px;
+}
+input, select, textarea {
+  width: 100%; background: var(--s1); border: 1px solid var(--b1);
+  color: var(--t1); font-family: 'DM Sans', sans-serif;
+  font-size: 14px; font-weight: 300; padding: 12px 14px;
+  border-radius: 2px; outline: none; transition: border-color 0.15s;
+  -webkit-appearance: none; appearance: none;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+input[type="password"] { letter-spacing: 2px; }
+select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236A5A48' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+select option { background: #1E1A16; }
+textarea { resize: vertical; min-height: 76px; line-height: 1.7; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+/* ─── DRIPPER ─── */
+.dripper-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+.dripper-btn {
+  background: var(--s1); border: 1px solid var(--b1); color: var(--t2);
+  padding: 13px 6px; border-radius: 2px; cursor: pointer; text-align: center;
+  transition: all 0.15s; -webkit-user-select: none;
+}
+.dripper-btn.active { background: var(--s3); border-color: var(--accent); color: var(--accent); }
+.dripper-icon { font-size: 20px; display: block; margin-bottom: 5px; }
+.dripper-name { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+
+/* ─── BUTTONS ─── */
+.btn-primary {
+  width: 100%; padding: 15px; background: var(--accent); color: #0D0B09;
+  border: none; border-radius: 2px; font-family: 'DM Mono', monospace;
+  font-size: 11px; letter-spacing: 3px; text-transform: uppercase; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; margin-top: 6px;
+}
+.btn-primary:disabled { background: var(--s3); color: var(--t3); cursor: not-allowed; }
+.btn-primary:not(:disabled):active { background: var(--accent2); }
+.btn-ghost {
+  width: 100%; padding: 13px; background: var(--s2); color: var(--t2);
+  border: 1px solid var(--b1); border-radius: 2px; font-family: 'DM Mono', monospace;
+  font-size: 11px; letter-spacing: 3px; text-transform: uppercase; cursor: pointer;
+  transition: all 0.15s; margin-top: 28px;
+}
+.btn-ghost:active { background: var(--s3); }
+.btn-small {
+  padding: 9px 16px; background: var(--accent); color: #0D0B09;
+  border: none; border-radius: 2px; font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 600;
+  cursor: pointer; width: 100%; margin-top: 12px;
+}
+
+/* ─── LOADING ─── */
+.loading { display: none; align-items: center; gap: 12px; padding: 20px 0; color: var(--t3); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; }
+.loading.show { display: flex; }
+.spinner { width: 16px; height: 16px; border: 1px solid var(--b2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── ALERTS ─── */
+.error { background: var(--red-bg); border: 1px solid var(--red-border); border-radius: 2px; padding: 13px 16px; color: var(--red); font-size: 13px; margin-top: 14px; font-family: 'DM Mono', monospace; line-height: 1.6; }
+.warn { background: #1A1408; border: 1px solid #4A3A08; border-radius: 2px; padding: 11px 16px; color: #B8960B; font-size: 12px; margin-bottom: 20px; font-family: 'DM Mono', monospace; line-height: 1.6; }
+.success { color: var(--green); font-size: 12px; font-family: 'DM Mono', monospace; margin-top: 10px; }
+
+/* ─── RECIPE OUTPUT ─── */
+.recipe-header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--b1); padding-bottom: 20px; margin-bottom: 28px; }
+.recipe-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--t1); }
+.tag { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); background: var(--s2); border: 1px solid var(--b1); padding: 3px 9px; border-radius: 1px; }
+.tag-dim { color: var(--t3); }
+
+.stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 22px; }
+.stat-card { background: var(--s1); border: 1px solid var(--b1); padding: 14px 14px 12px; border-radius: 2px; }
+.stat-label { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: var(--t3); margin-bottom: 8px; }
+.stat-val { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--accent); line-height: 1; }
+.stat-unit { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--t3); margin-left: 2px; }
+
+.vs3-box { background: var(--s2); border: 1px solid var(--b1); border-left: 3px solid var(--accent); padding: 18px 20px; margin-bottom: 24px; border-radius: 0 2px 2px 0; }
+.vs3-lbl { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+.vs3-num { font-family: 'Playfair Display', serif; font-size: 44px; color: var(--t1); line-height: 1; display: inline-block; margin-right: 14px; }
+.vs3-detail { font-size: 13px; color: var(--t2); line-height: 1.7; }
+
+.recipe-section { margin-bottom: 26px; padding-bottom: 26px; border-bottom: 1px solid var(--b1); }
+.recipe-section:last-of-type { border-bottom: none; }
+.section-lbl { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--t3); margin-bottom: 12px; }
+.body-text { font-size: 14px; line-height: 1.9; color: var(--t2); }
+
+.steps { list-style: none; }
+.step { display: grid; grid-template-columns: 28px 1fr; gap: 14px; margin-bottom: 12px; align-items: start; }
+.step-n { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent); padding-top: 3px; letter-spacing: 1px; }
+.step-t { font-size: 14px; color: var(--t2); line-height: 1.8; }
+.adjust-box { background: var(--s1); border: 1px solid var(--b2); padding: 14px 18px; border-radius: 2px; font-size: 13px; color: var(--t3); line-height: 1.7; font-family: 'DM Mono', monospace; letter-spacing: 0.3px; }
+
+/* ─── INSTALL BANNER ─── */
+.install-banner {
+  background: var(--s2); border: 1px solid var(--b2);
+  border-radius: 2px; padding: 14px 18px;
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 24px; cursor: pointer;
+  transition: border-color 0.15s;
+}
+.install-banner:hover { border-color: var(--accent); }
+.install-icon { font-size: 22px; flex-shrink: 0; }
+.install-text { font-size: 13px; color: var(--t2); line-height: 1.5; }
+.install-text strong { color: var(--t1); display: block; margin-bottom: 2px; font-weight: 500; }
+.install-arrow { margin-left: auto; color: var(--t3); font-size: 18px; flex-shrink: 0; }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 520px) {
+  .dripper-grid { grid-template-columns: repeat(2,1fr); }
+  .stats-row { grid-template-columns: repeat(2,1fr); }
+  .grid2 { grid-template-columns: 1fr; }
+  .vs3-num { font-size: 36px; }
+  .header { padding-top: 24px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div>
+      <div class="logo">BREW</div>
+      <div class="logo-sub">Recipe Optimizer</div>
+    </div>
+    <div class="vs3-badge">Varia VS3</div>
+    <button class="settings-btn" onclick="toggleSettings()" title="API Key設定">⚙</button>
+  </div>
+
+  <!-- SETTINGS PANEL -->
+  <div class="panel-overlay" id="settingsPanel" style="display:none" onclick="closeSettingsOutside(event)">
+    <div class="panel">
+      <div class="panel-title">▸ API Key Settings</div>
+      <div class="panel-desc">
+        Anthropic APIキーを入力してください。キーはデバイス内にのみ保存され、サーバーには送信されません。<br>
+        キーは <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> で取得できます。
+      </div>
+      <div class="field">
+        <label>Anthropic API Key</label>
+        <input type="password" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off" />
+      </div>
+      <button class="btn-small" onclick="saveApiKey()">Save Key</button>
+      <div id="saveMsg"></div>
+    </div>
+  </div>
+
+  <!-- INSTALL BANNER (shown when installable) -->
+  <div class="install-banner" id="installBanner" style="display:none" onclick="installPWA()">
+    <span class="install-icon">📲</span>
+    <div class="install-text">
+      <strong>ホーム画面に追加</strong>
+      オフラインでも使えるアプリとしてインストール
+    </div>
+    <span class="install-arrow">›</span>
+  </div>
+
+  <!-- FORM SCREEN -->
+  <div id="formScreen" class="screen">
+    <div id="noKeyWarn" class="warn" style="display:none">
+      ⚠ APIキーが設定されていません。右上の ⚙ からキーを設定してください。
+    </div>
+
+    <!-- Dripper -->
+    <div class="field">
+      <div class="lbl">Brewing Method</div>
+      <div class="dripper-grid">
+        <button class="dripper-btn active" data-d="V60" onclick="pickDripper(this)">
+          <span class="dripper-icon">△</span><span class="dripper-name">V60</span>
+        </button>
+        <button class="dripper-btn" data-d="Kalita Wave" onclick="pickDripper(this)">
+          <span class="dripper-icon">⬡</span><span class="dripper-name">Kalita</span>
+        </button>
+        <button class="dripper-btn" data-d="Origami" onclick="pickDripper(this)">
+          <span class="dripper-icon">◇</span><span class="dripper-name">Origami</span>
+        </button>
+        <button class="dripper-btn" data-d="Espresso" onclick="pickDripper(this)">
+          <span class="dripper-icon">☕</span><span class="dripper-name">Espresso</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label>Origin / 産地</label>
+        <input id="origin" placeholder="例：エチオピア イルガチェフェ" />
+      </div>
+      <div class="field">
+        <label>Variety / 品種</label>
+        <input id="variety" placeholder="例：Heirloom / Gesha" />
+      </div>
+      <div class="field">
+        <label>Process / 精製</label>
+        <select id="process">
+          <option value="">選択</option>
+          <option>Washed</option>
+          <option>Natural</option>
+          <option>Honey</option>
+          <option>Anaerobic Washed</option>
+          <option>Anaerobic Natural</option>
+          <option>Carbonic Maceration</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Roast / 焙煎度</label>
+        <select id="roast">
+          <option value="">選択</option>
+          <option value="Light">Light（浅煎り）</option>
+          <option value="Light-Medium">Light-Medium</option>
+          <option value="Medium">Medium（中煎り）</option>
+          <option value="Medium-Dark">Medium-Dark</option>
+          <option value="Dark">Dark（深煎り）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Roast Date / 焙煎日</label>
+        <input id="roastDate" type="date" />
+      </div>
+      <div class="field">
+        <label>Dose / 豆量（g）</label>
+        <input id="dose" type="number" placeholder="15" min="5" max="30" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Notes / 補足（任意）</label>
+      <textarea id="notes" placeholder="例：フルーティな酸を活かしたい / ボディを重めに / 軟水使用 など"></textarea>
+    </div>
+
+    <button class="btn-primary" id="submitBtn" onclick="generate()">OPTIMIZE RECIPE</button>
+    <div class="loading" id="loading"><div class="spinner"></div><span id="loadingMsg">Analyzing bean characteristics...</span></div>
+    <div class="error" id="errorMsg" style="display:none"></div>
+  </div>
+
+  <!-- RECIPE SCREEN -->
+  <div id="recipeScreen" class="screen" style="display:none">
+    <div class="recipe-header">
+      <div class="recipe-title" id="rTitle"></div>
+      <div class="tag" id="rDripper"></div>
+      <div class="tag tag-dim" id="rDay"></div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Temp</div><span class="stat-val" id="rTemp">—</span><span class="stat-unit">℃</span></div>
+      <div class="stat-card"><div class="stat-label">Dose</div><span class="stat-val" id="rDose">—</span><span class="stat-unit">g</span></div>
+      <div class="stat-card"><div class="stat-label">Water</div><span class="stat-val" id="rWater">—</span><span class="stat-unit">g</span></div>
+      <div class="stat-card"><div class="stat-label">Time</div><span class="stat-val" id="rTime" style="font-size:20px;padding-top:4px">—</span></div>
+    </div>
+
+    <div class="vs3-box">
+      <div class="vs3-lbl">▸ Varia VS3 — Recommended Setting</div>
+      <div>
+        <span class="vs3-num" id="rVs3">—</span>
+        <span class="vs3-detail" id="rVs3d"></span>
+      </div>
+    </div>
+
+    <div class="recipe-section" id="rRationale"></div>
+    <div class="recipe-section" id="rSteps"></div>
+    <div id="rAdjust"></div>
+
+    <button class="btn-ghost" onclick="showForm()">← NEW RECIPE</button>
+  </div>
+</div>
+
+<script>
+// ── State ──
+let dripper = 'V60';
+let deferredInstall = null;
+
+// ── Init ──
+document.getElementById('roastDate').value = new Date().toISOString().split('T')[0];
+checkApiKey();
+loadSavedInputs();
+
+// ── PWA install ──
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstall = e;
+  document.getElementById('installBanner').style.display = 'flex';
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').style.display = 'none';
+});
+
+function installPWA() {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  deferredInstall.userChoice.then(() => {
+    deferredInstall = null;
+    document.getElementById('installBanner').style.display = 'none';
+  });
+}
+
+// ── Service Worker ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ── Dripper ──
+function pickDripper(btn) {
+  document.querySelectorAll('.dripper-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  dripper = btn.dataset.d;
+}
+
+// ── API Key ──
+function checkApiKey() {
+  const key = localStorage.getItem('brew_api_key');
+  document.getElementById('noKeyWarn').style.display = key ? 'none' : 'block';
+  if (key) document.getElementById('apiKeyInput').value = key;
+}
+
+function saveApiKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  if (!val.startsWith('sk-')) {
+    document.getElementById('saveMsg').innerHTML = '<div class="error">有効なAPIキー（sk-...）を入力してください</div>';
+    return;
+  }
+  localStorage.setItem('brew_api_key', val);
+  document.getElementById('saveMsg').innerHTML = '<div class="success">✓ 保存しました</div>';
+  document.getElementById('noKeyWarn').style.display = 'none';
+  setTimeout(closeSettings, 800);
+}
+
+// ── Settings Panel ──
+function toggleSettings() {
+  const p = document.getElementById('settingsPanel');
+  p.style.display = p.style.display === 'none' ? 'flex' : 'none';
+}
+function closeSettings() { document.getElementById('settingsPanel').style.display = 'none'; }
+function closeSettingsOutside(e) { if (e.target === document.getElementById('settingsPanel')) closeSettings(); }
+
+// ── Save/restore inputs ──
+function saveInputs() {
+  const data = { dripper, origin: v('origin'), variety: v('variety'), process: v('process'), roast: v('roast'), dose: v('dose'), notes: v('notes') };
+  localStorage.setItem('brew_inputs', JSON.stringify(data));
+}
+function loadSavedInputs() {
+  try {
+    const d = JSON.parse(localStorage.getItem('brew_inputs') || '{}');
+    if (d.origin) document.getElementById('origin').value = d.origin;
+    if (d.variety) document.getElementById('variety').value = d.variety;
+    if (d.process) document.getElementById('process').value = d.process;
+    if (d.roast) document.getElementById('roast').value = d.roast;
+    if (d.dose) document.getElementById('dose').value = d.dose;
+    if (d.notes) document.getElementById('notes').value = d.notes;
+    if (d.dripper) {
+      const btn = document.querySelector(`[data-d="${d.dripper}"]`);
+      if (btn) pickDripper(btn);
+    }
+  } catch(e) {}
+}
+
+function v(id) { return document.getElementById(id).value; }
+
+function getDays() {
+  const d = v('roastDate');
+  if (!d) return null;
+  return Math.floor((Date.now() - new Date(d)) / 86400000);
+}
+
+// ── Prompt ──
+function buildPrompt() {
+  const isEspresso = dripper === 'Espresso';
+  const vs3 = isEspresso
+    ? 'VS3エスプレッソ基準：#2〜6。浅煎り=#2〜3、標準=#3〜4、深煎り=#4〜5。Stepless。'
+    : 'VS3フィルター基準：V60=#9〜11、Kalita=#10〜12、Origami=#9〜11。浅煎りは細かく、深煎りは粗め。Stepless。';
+  const days = getDays();
+  return `あなたはコーヒー抽出専門家です。以下の豆情報から最適レシピをJSONで返してください。
+
+## 豆情報
+産地:${v('origin')||'不明'} / 品種:${v('variety')||'不明'} / 精製:${v('process')||'不明'} / 焙煎:${v('roast')||'不明'} / 焙煎後:${days!==null?days+'日目':'不明'} / 豆量:${v('dose')||15}g / 器具:${dripper} / 補足:${v('notes')||'なし'}
+
+## グラインダー
+Varia VS3（ステップレス、コニカルバー38mm）${vs3}
+
+## 出力（JSONのみ）
+{"title":"レシピ名（英語短め）","temp":数値,"dose":数値,"water":数値,"time":"例:2:45〜3:15","vs3Setting":"例:9.5 or 9〜10","vs3Detail":"VS3補足（40字以内）","rationale":"選択理由（120字程度）","steps":["手順1","手順2","手順3","手順4","手順5"],"adjustmentTips":"ダイヤリングヒント（80字程度）"}`;
+}
+
+// ── Generate ──
+async function generate() {
+  const key = localStorage.getItem('brew_api_key');
+  if (!key) { toggleSettings(); return; }
+
+  saveInputs();
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('errorMsg').style.display = 'none';
+
+  const msgs = ['Analyzing bean characteristics...', 'Calculating VS3 setting...', 'Optimizing extraction parameters...'];
+  let mi = 0;
+  const ticker = setInterval(() => { mi=(mi+1)%msgs.length; document.getElementById('loadingMsg').textContent = msgs[mi]; }, 1800);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: buildPrompt() }] })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = (data.content||[]).map(c=>c.text||'').join('');
+    const clean = text.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/i,'').trim();
+    let recipe;
+    try { recipe = JSON.parse(clean); }
+    catch { const m = clean.match(/\{[\s\S]*\}/); recipe = m ? JSON.parse(m[0]) : null; }
+    if (!recipe) throw new Error('JSONの解析に失敗しました');
+
+    renderRecipe(recipe);
+  } catch(e) {
+    const em = document.getElementById('errorMsg');
+    em.textContent = '⚠ ' + (e.message || 'エラーが発生しました');
+    em.style.display = 'block';
+    document.getElementById('submitBtn').disabled = false;
+  } finally {
+    clearInterval(ticker);
+    document.getElementById('loading').classList.remove('show');
+  }
+}
+
+// ── Render ──
+function renderRecipe(r) {
+  document.getElementById('rTitle').textContent = r.title || 'Optimized Recipe';
+  document.getElementById('rDripper').textContent = dripper;
+  const days = getDays();
+  const dayEl = document.getElementById('rDay');
+  dayEl.textContent = days !== null ? `Day ${days}` : '';
+  dayEl.style.display = days !== null ? '' : 'none';
+
+  document.getElementById('rTemp').textContent = r.temp || '—';
+  document.getElementById('rDose').textContent = r.dose || '—';
+  document.getElementById('rWater').textContent = r.water || '—';
+  document.getElementById('rTime').textContent = r.time || '—';
+  document.getElementById('rVs3').textContent = r.vs3Setting || '—';
+  document.getElementById('rVs3d').textContent = r.vs3Detail || '';
+
+  if (r.rationale) {
+    document.getElementById('rRationale').innerHTML = `
+      <div class="section-lbl">▸ Why this recipe</div>
+      <p class="body-text">${r.rationale}</p>`;
+  }
+
+  if (r.steps?.length) {
+    document.getElementById('rSteps').innerHTML = `
+      <div class="section-lbl">▸ Brew Steps</div>
+      <ol class="steps">${r.steps.map((s,i)=>`
+        <li class="step"><span class="step-n">0${i+1}</span><span class="step-t">${s}</span></li>`).join('')}
+      </ol>`;
+  }
+
+  if (r.adjustmentTips) {
+    document.getElementById('rAdjust').innerHTML = `
+      <div class="section-lbl">▸ Dial-in Guide</div>
+      <div class="adjust-box">${r.adjustmentTips}</div>`;
+  }
+
+  document.getElementById('formScreen').style.display = 'none';
+  document.getElementById('recipeScreen').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showForm() {
+  document.getElementById('recipeScreen').style.display = 'none';
+  document.getElementById('formScreen').style.display = 'block';
+  document.getElementById('submitBtn').disabled = false;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
